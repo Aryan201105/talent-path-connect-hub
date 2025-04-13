@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -135,15 +134,13 @@ const skillsData = [
 const Skills = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedLevel, setSelectedLevel] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState('all');
   const [showFreeOnly, setShowFreeOnly] = useState(false);
   const [filteredSkills, setFilteredSkills] = useState(skillsData);
   
-  // Apply filters
   const applyFilters = () => {
     let filtered = skillsData;
     
-    // Search term filter
     if (searchTerm) {
       filtered = filtered.filter(
         skill => skill.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -152,17 +149,14 @@ const Skills = () => {
       );
     }
     
-    // Category filter
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(skill => skill.category === selectedCategory);
     }
     
-    // Level filter
-    if (selectedLevel) {
+    if (selectedLevel !== 'all') {
       filtered = filtered.filter(skill => skill.level === selectedLevel);
     }
     
-    // Free only filter
     if (showFreeOnly) {
       filtered = filtered.filter(skill => skill.isFree);
     }
@@ -170,16 +164,14 @@ const Skills = () => {
     setFilteredSkills(filtered);
   };
   
-  // Reset filters
   const resetFilters = () => {
     setSearchTerm('');
     setSelectedCategory('all');
-    setSelectedLevel('');
+    setSelectedLevel('all');
     setShowFreeOnly(false);
     setFilteredSkills(skillsData);
   };
   
-  // Category counts
   const categoryCounts = {
     all: skillsData.length,
     programming: skillsData.filter(skill => skill.category === 'programming').length,
@@ -195,7 +187,6 @@ const Skills = () => {
       <Navbar />
       
       <main className="flex-grow bg-gray-50">
-        {/* Skills Hero Section */}
         <section className="bg-gradient-to-r from-srs-blue to-srs-blue-dark py-16 md:py-20">
           <div className="container-custom">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -273,10 +264,8 @@ const Skills = () => {
           </div>
         </section>
         
-        {/* Skills Listing Section */}
         <section className="py-12">
           <div className="container-custom">
-            {/* Category Tabs */}
             <Tabs defaultValue="all" value={selectedCategory} onValueChange={setSelectedCategory} className="mb-8">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold">Explore Our Courses</h2>
@@ -307,7 +296,6 @@ const Skills = () => {
                 </div>
               </div>
               
-              {/* Mobile Category Dropdown */}
               <div className="block md:hidden mb-4">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger>
@@ -325,7 +313,6 @@ const Skills = () => {
                 </Select>
               </div>
               
-              {/* Filters Row */}
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
                 <div className="flex-1">
                   <Select value={selectedLevel} onValueChange={setSelectedLevel}>
@@ -333,7 +320,7 @@ const Skills = () => {
                       <SelectValue placeholder="All Levels" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Levels</SelectItem>
+                      <SelectItem value="all">All Levels</SelectItem>
                       <SelectItem value="Beginner">Beginner</SelectItem>
                       <SelectItem value="Intermediate">Intermediate</SelectItem>
                       <SelectItem value="Advanced">Advanced</SelectItem>
@@ -358,7 +345,6 @@ const Skills = () => {
                 </Button>
               </div>
               
-              {/* Courses Grid */}
               <div>
                 {filteredSkills.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -386,7 +372,6 @@ const Skills = () => {
           </div>
         </section>
         
-        {/* Call to Action Section */}
         <section className="bg-srs-blue-dark text-white py-16">
           <div className="container-custom text-center">
             <h2 className="text-3xl font-bold mb-4">Ready to Start Your Learning Journey?</h2>
