@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -22,93 +21,7 @@ import { Search, Filter, MapPin, Briefcase, Clock, ArrowUpDown, X } from 'lucide
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import JobCard from '@/components/JobCard';
-
-// Sample job data
-const jobsData = [
-  {
-    id: "1",
-    title: "Frontend Developer",
-    company: "TechSolutions Inc.",
-    location: "Bangalore, India",
-    salary: "₹6,00,000 - ₹9,00,000 / year",
-    jobType: "Full-time",
-    postedDate: "3 days ago",
-    isRemote: true,
-    isFeatured: true
-  },
-  {
-    id: "2",
-    title: "Data Analyst",
-    company: "Analytics Pro",
-    location: "Mumbai, India",
-    salary: "₹5,00,000 - ₹7,00,000 / year",
-    jobType: "Full-time",
-    postedDate: "1 week ago",
-    isFeatured: true
-  },
-  {
-    id: "3",
-    title: "Digital Marketing Specialist",
-    company: "Growth Marketing",
-    location: "Delhi, India",
-    salary: "₹4,50,000 - ₹6,50,000 / year",
-    jobType: "Full-time",
-    postedDate: "2 days ago",
-    isFeatured: false
-  },
-  {
-    id: "4",
-    title: "Software Engineer",
-    company: "InnovateTech",
-    location: "Hyderabad, India",
-    salary: "₹7,00,000 - ₹10,00,000 / year",
-    jobType: "Full-time",
-    postedDate: "5 days ago",
-    isFeatured: false
-  },
-  {
-    id: "5",
-    title: "UI/UX Designer",
-    company: "DesignHub",
-    location: "Pune, India",
-    salary: "₹5,50,000 - ₹8,00,000 / year",
-    jobType: "Full-time",
-    postedDate: "1 day ago",
-    isRemote: true,
-    isFeatured: false
-  },
-  {
-    id: "6",
-    title: "Product Manager",
-    company: "ProductWave",
-    location: "Bangalore, India",
-    salary: "₹12,00,000 - ₹18,00,000 / year",
-    jobType: "Full-time",
-    postedDate: "2 weeks ago",
-    isFeatured: false
-  },
-  {
-    id: "7",
-    title: "Content Writer",
-    company: "ContentCraft",
-    location: "Chennai, India",
-    salary: "₹3,50,000 - ₹5,00,000 / year",
-    jobType: "Part-time",
-    postedDate: "4 days ago",
-    isRemote: true,
-    isFeatured: false
-  },
-  {
-    id: "8",
-    title: "Backend Developer",
-    company: "ServerStack",
-    location: "Kolkata, India",
-    salary: "₹7,00,000 - ₹9,50,000 / year",
-    jobType: "Full-time",
-    postedDate: "1 week ago",
-    isFeatured: true
-  }
-];
+import { supabase } from '@/lib/supabaseClient';
 
 const Jobs = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -119,59 +32,76 @@ const Jobs = () => {
   const [salaryRange, setSalaryRange] = useState([3, 18]); // in lakhs
   const [sortBy, setSortBy] = useState('recent');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [filteredJobs, setFilteredJobs] = useState(jobsData);
-  
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [filteredJobs, setFilteredJobs] = useState<any[]>([]);
+
+  // Fetch jobs from Supabase
+  useEffect(() => {
+    const fetchJobs = async () => {
+      const { data, error } = await supabase.from("jobs").select("*");
+      if (error) {
+        console.error(error);
+      } else {
+        setJobs(data || []);
+        setFilteredJobs(data || []);
+      }
+    };
+    fetchJobs();
+  }, []);
+
   // Filter jobs
   const applyFilters = () => {
-    let filtered = jobsData;
-    
+    let filtered = [...jobs];
+
     // Search term filter
     if (searchTerm) {
       filtered = filtered.filter(
-        job => job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-               job.company.toLowerCase().includes(searchTerm.toLowerCase())
+        job =>
+          (job.title && job.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (job.company && job.company.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
-    
+
     // Location filter
     if (location) {
       filtered = filtered.filter(
-        job => job.location.toLowerCase().includes(location.toLowerCase())
+        job => job.location && job.location.toLowerCase().includes(location.toLowerCase())
       );
     }
-    
+
     // Job type filter
     if (jobType.length > 0) {
       filtered = filtered.filter(
-        job => jobType.some(type => job.jobType.toLowerCase().includes(type.toLowerCase()))
+        job =>
+          job.jobType &&
+          jobType.some(type => job.jobType.toLowerCase().includes(type.toLowerCase()))
       );
     }
-    
+
     // Remote only filter
     if (remoteOnly) {
       filtered = filtered.filter(job => job.isRemote);
     }
-    
+
     // Sort results
-    if (sortBy === 'recent') {
-      // Already sorted by recent in the sample data
-    } else if (sortBy === 'salary-high') {
+    if (sortBy === 'salary-high') {
       filtered = [...filtered].sort((a, b) => {
-        const aMax = parseInt(a.salary.split(' - ')[1].replace(/[^\d]/g, ''));
-        const bMax = parseInt(b.salary.split(' - ')[1].replace(/[^\d]/g, ''));
+        const aMax = parseInt((a.salary || '').split(' - ')[1]?.replace(/[^\d]/g, '') || '0');
+        const bMax = parseInt((b.salary || '').split(' - ')[1]?.replace(/[^\d]/g, '') || '0');
         return bMax - aMax;
       });
     } else if (sortBy === 'salary-low') {
       filtered = [...filtered].sort((a, b) => {
-        const aMin = parseInt(a.salary.split(' - ')[0].replace(/[^\d]/g, ''));
-        const bMin = parseInt(b.salary.split(' - ')[0].replace(/[^\d]/g, ''));
+        const aMin = parseInt((a.salary || '').split(' - ')[0]?.replace(/[^\d]/g, '') || '0');
+        const bMin = parseInt((b.salary || '').split(' - ')[0]?.replace(/[^\d]/g, '') || '0');
         return aMin - bMin;
       });
     }
-    
+    // Default is recent, assuming jobs are already sorted by created_at DESC
+
     setFilteredJobs(filtered);
   };
-  
+
   // Reset all filters
   const resetFilters = () => {
     setSearchTerm('');
@@ -181,9 +111,9 @@ const Jobs = () => {
     setRemoteOnly(false);
     setSalaryRange([3, 18]);
     setSortBy('recent');
-    setFilteredJobs(jobsData);
+    setFilteredJobs(jobs);
   };
-  
+
   // Toggle job type
   const toggleJobType = (type: string) => {
     if (jobType.includes(type)) {
@@ -192,7 +122,7 @@ const Jobs = () => {
       setJobType([...jobType, type]);
     }
   };
-  
+
   // Toggle experience level
   const toggleExperienceLevel = (level: string) => {
     if (experienceLevel.includes(level)) {
@@ -201,11 +131,28 @@ const Jobs = () => {
       setExperienceLevel([...experienceLevel, level]);
     }
   };
-  
+
+  // Handle job application
+  const handleApply = async (jobId: string) => {
+    const user = supabase.auth.user?.();
+    if (!user) {
+      alert("Please log in to apply.");
+      return;
+    }
+    const { error } = await supabase
+      .from("job_applications")
+      .insert([{ user_id: user.id, job_id: jobId, status: "applied" }]);
+    if (error) {
+      alert("Application failed: " + error.message);
+    } else {
+      alert("Application submitted!");
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
+
       <main className="flex-grow bg-gray-50">
         {/* Job Search Hero Section */}
         <section className="bg-srs-blue py-12 md:py-16">
@@ -216,7 +163,7 @@ const Jobs = () => {
                 Explore thousands of job opportunities from top companies
               </p>
             </div>
-            
+
             <div className="bg-white rounded-lg shadow-lg p-4 md:p-6 max-w-4xl mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="relative">
@@ -230,7 +177,7 @@ const Jobs = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                
+
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <MapPin className="h-5 w-5 text-gray-400" />
@@ -242,8 +189,8 @@ const Jobs = () => {
                     onChange={(e) => setLocation(e.target.value)}
                   />
                 </div>
-                
-                <Button 
+
+                <Button
                   className="bg-srs-blue hover:bg-srs-blue-dark text-white"
                   onClick={applyFilters}
                 >
@@ -253,7 +200,7 @@ const Jobs = () => {
             </div>
           </div>
         </section>
-        
+
         {/* Job Listings Section */}
         <section className="py-12">
           <div className="container-custom">
@@ -263,16 +210,16 @@ const Jobs = () => {
                 <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 sticky top-24">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="font-semibold text-lg">Filters</h3>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={resetFilters}
                       className="h-8 text-sm text-srs-blue hover:text-srs-blue-dark hover:bg-blue-50"
                     >
                       Reset All
                     </Button>
                   </div>
-                  
+
                   <div className="space-y-6">
                     {/* Job Type */}
                     <div>
@@ -280,12 +227,12 @@ const Jobs = () => {
                       <div className="space-y-2">
                         {['Full-time', 'Part-time', 'Contract', 'Internship'].map((type) => (
                           <div key={type} className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`job-type-${type}`} 
+                            <Checkbox
+                              id={`job-type-${type}`}
                               checked={jobType.includes(type)}
                               onCheckedChange={() => toggleJobType(type)}
                             />
-                            <label 
+                            <label
                               htmlFor={`job-type-${type}`}
                               className="text-sm cursor-pointer"
                             >
@@ -295,19 +242,19 @@ const Jobs = () => {
                         ))}
                       </div>
                     </div>
-                    
+
                     {/* Experience Level */}
                     <div>
                       <h4 className="font-medium mb-3">Experience Level</h4>
                       <div className="space-y-2">
                         {['Entry Level', 'Mid Level', 'Senior Level', 'Director', 'Executive'].map((level) => (
                           <div key={level} className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`exp-level-${level}`} 
+                            <Checkbox
+                              id={`exp-level-${level}`}
                               checked={experienceLevel.includes(level)}
                               onCheckedChange={() => toggleExperienceLevel(level)}
                             />
-                            <label 
+                            <label
                               htmlFor={`exp-level-${level}`}
                               className="text-sm cursor-pointer"
                             >
@@ -317,16 +264,16 @@ const Jobs = () => {
                         ))}
                       </div>
                     </div>
-                    
+
                     {/* Remote Only */}
                     <div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="remote-only" 
+                        <Checkbox
+                          id="remote-only"
                           checked={remoteOnly}
                           onCheckedChange={(checked) => setRemoteOnly(!!checked)}
                         />
-                        <label 
+                        <label
                           htmlFor="remote-only"
                           className="font-medium cursor-pointer"
                         >
@@ -334,7 +281,7 @@ const Jobs = () => {
                         </label>
                       </div>
                     </div>
-                    
+
                     {/* Salary Range */}
                     <div>
                       <h4 className="font-medium mb-3">Salary Range (Lakhs ₹/year)</h4>
@@ -351,8 +298,8 @@ const Jobs = () => {
                         <span>₹{salaryRange[1]} Lakhs</span>
                       </div>
                     </div>
-                    
-                    <Button 
+
+                    <Button
                       className="w-full bg-srs-blue hover:bg-srs-blue-dark text-white"
                       onClick={applyFilters}
                     >
@@ -361,7 +308,7 @@ const Jobs = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Job Listings */}
               <div className="flex-1">
                 {/* Mobile Filters & Sort */}
@@ -374,7 +321,7 @@ const Jobs = () => {
                     <Filter className="w-4 h-4 mr-2" />
                     Filters
                   </Button>
-                  
+
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger className="flex-1 border-gray-200">
                       <div className="flex items-center">
@@ -390,15 +337,15 @@ const Jobs = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 {/* Mobile Filters Panel */}
                 {isFilterOpen && (
                   <div className="lg:hidden bg-white rounded-lg shadow-md p-4 mb-6 border border-gray-100">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-semibold">Filters</h3>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setIsFilterOpen(false)}
                         className="h-8 w-8 p-0"
                       >
@@ -413,12 +360,12 @@ const Jobs = () => {
                           <div className="space-y-2 pt-2">
                             {['Full-time', 'Part-time', 'Contract', 'Internship'].map((type) => (
                               <div key={type} className="flex items-center space-x-2">
-                                <Checkbox 
-                                  id={`mobile-job-type-${type}`} 
+                                <Checkbox
+                                  id={`mobile-job-type-${type}`}
                                   checked={jobType.includes(type)}
                                   onCheckedChange={() => toggleJobType(type)}
                                 />
-                                <label 
+                                <label
                                   htmlFor={`mobile-job-type-${type}`}
                                   className="text-sm cursor-pointer"
                                 >
@@ -436,12 +383,12 @@ const Jobs = () => {
                           <div className="space-y-2 pt-2">
                             {['Entry Level', 'Mid Level', 'Senior Level', 'Director', 'Executive'].map((level) => (
                               <div key={level} className="flex items-center space-x-2">
-                                <Checkbox 
-                                  id={`mobile-exp-level-${level}`} 
+                                <Checkbox
+                                  id={`mobile-exp-level-${level}`}
                                   checked={experienceLevel.includes(level)}
                                   onCheckedChange={() => toggleExperienceLevel(level)}
                                 />
-                                <label 
+                                <label
                                   htmlFor={`mobile-exp-level-${level}`}
                                   className="text-sm cursor-pointer"
                                 >
@@ -458,12 +405,12 @@ const Jobs = () => {
                         <AccordionContent>
                           <div className="pt-2">
                             <div className="flex items-center space-x-2">
-                              <Checkbox 
-                                id="mobile-remote-only" 
+                              <Checkbox
+                                id="mobile-remote-only"
                                 checked={remoteOnly}
                                 onCheckedChange={(checked) => setRemoteOnly(!!checked)}
                               />
-                              <label 
+                              <label
                                 htmlFor="mobile-remote-only"
                                 className="text-sm cursor-pointer"
                               >
@@ -496,14 +443,14 @@ const Jobs = () => {
                     </Accordion>
                     
                     <div className="flex space-x-3 mt-6">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="flex-1"
                         onClick={resetFilters}
                       >
                         Reset
                       </Button>
-                      <Button 
+                      <Button
                         className="flex-1 bg-srs-blue hover:bg-srs-blue-dark text-white"
                         onClick={() => {
                           applyFilters();
@@ -607,7 +554,7 @@ const Jobs = () => {
                 <div className="space-y-6">
                   {filteredJobs.length > 0 ? (
                     filteredJobs.map(job => (
-                      <JobCard key={job.id} {...job} />
+                      <JobCard key={job.id} {...job} onApply={() => handleApply(job.id)} />
                     ))
                   ) : (
                     <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
@@ -653,7 +600,6 @@ const Jobs = () => {
           </div>
         </section>
       </main>
-      
       <Footer />
     </div>
   );
