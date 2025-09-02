@@ -1,4 +1,6 @@
- 
+Preview:
+<img width="1919" height="922" alt="Screenshot 2025-08-15 164254" src="https://github.com/user-attachments/assets/4ba2ae89-d0ff-4cc9-930f-3835e8005b21" />
+
 
 **Use your preferred IDE**
 
